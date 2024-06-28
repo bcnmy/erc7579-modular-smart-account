@@ -13,7 +13,8 @@ pragma solidity ^0.8.26;
 // Learn more at https://biconomy.io. To report security issues, please contact us at: security@biconomy.io
 import { LibClone } from "solady/src/utils/LibClone.sol";
 import { INexus } from "../interfaces/INexus.sol";
-import { AbstractNexusFactory } from "./AbstractNexusFactory.sol";
+import { Stakeable } from "../common/Stakeable.sol";
+import { INexusFactory } from "../interfaces/factory/INexusFactory.sol";
 
 /// @title Nexus Account Factory
 /// @notice Manages the creation of Modular Smart Accounts compliant with ERC-7579 and ERC-4337 using a factory pattern.
@@ -22,11 +23,19 @@ import { AbstractNexusFactory } from "./AbstractNexusFactory.sol";
 /// @author @filmakarov | Biconomy | filipp.makarov@biconomy.io
 /// @author @zeroknots | Rhinestone.wtf | zeroknots.eth
 /// Special thanks to the Solady team for foundational contributions: https://github.com/Vectorized/solady
-contract NexusAccountFactory is AbstractNexusFactory {
-    /// @notice Constructor to set the smart account implementation address and owner.
+contract NexusAccountFactory is Stakeable, INexusFactory {
+    /// @notice Address of the implementation contract used to create new Nexus instances.
+    /// @dev This address is immutable and set upon deployment, ensuring the implementation cannot be changed.
+    address public immutable ACCOUNT_IMPLEMENTATION;
+
+    /// @notice Constructor to set the smart account implementation address and the factory owner.
     /// @param implementation_ The address of the Nexus implementation to be used for all deployments.
     /// @param owner_ The address of the owner of the factory.
-    constructor(address implementation_, address owner_) AbstractNexusFactory(implementation_, owner_) {}
+    constructor(address implementation_, address owner_) Stakeable(owner_) {
+        require(implementation_ != address(0), ImplementationAddressCanNotBeZero());
+        require(owner_ != address(0), ZeroAddressNotAllowed());
+        ACCOUNT_IMPLEMENTATION = implementation_;
+    }
 
     /// @notice Creates a new Nexus account with the provided initialization data.
     /// @param initData Initialization data to be called on the new Smart Account.

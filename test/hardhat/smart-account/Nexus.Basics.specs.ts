@@ -331,19 +331,20 @@ describe("Nexus Basic Specs", function () {
       const isModuleInstalled = await smartAccount.isModuleInstalled(
         ModuleType.Validation,
         await validatorModule.getAddress(),
-        ethers.hexlify("0x")
+        ethers.hexlify("0x"),
       );
       expect(isModuleInstalled).to.be.true;
 
       // 1. Convert foundry util to ts code (as below)
 
-      const data = keccak256("0x1234")
+      const data = keccak256("0x1234");
 
       // Define constants as per the original Solidity function
-      const DOMAIN_NAME = 'Nexus';
-      const DOMAIN_VERSION = '1.0.0-beta';
-      const DOMAIN_TYPEHASH = 'EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)';
-      const PARENT_TYPEHASH = 'PersonalSign(bytes prefixed)';
+      const DOMAIN_NAME = "Nexus";
+      const DOMAIN_VERSION = "1.0.0-beta";
+      const DOMAIN_TYPEHASH =
+        "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)";
+      const PARENT_TYPEHASH = "PersonalSign(bytes prefixed)";
       const ALICE_ACCOUNT = smartAccountAddress;
       const network = await ethers.provider.getNetwork();
       const chainId = network.chainId;
@@ -351,49 +352,49 @@ describe("Nexus Basic Specs", function () {
       // Calculate the domain separator
       const domainSeparator = ethers.keccak256(
         ethers.AbiCoder.defaultAbiCoder().encode(
-          ['bytes32', 'bytes32', 'bytes32', 'uint256', 'address'],
+          ["bytes32", "bytes32", "bytes32", "uint256", "address"],
           [
-              ethers.keccak256(ethers.toUtf8Bytes(DOMAIN_TYPEHASH)),
-              ethers.keccak256(ethers.toUtf8Bytes(DOMAIN_NAME)),
-              ethers.keccak256(ethers.toUtf8Bytes(DOMAIN_VERSION)),
-              chainId,
-              ALICE_ACCOUNT
-          ]
-        )
+            ethers.keccak256(ethers.toUtf8Bytes(DOMAIN_TYPEHASH)),
+            ethers.keccak256(ethers.toUtf8Bytes(DOMAIN_NAME)),
+            ethers.keccak256(ethers.toUtf8Bytes(DOMAIN_VERSION)),
+            chainId,
+            ALICE_ACCOUNT,
+          ],
+        ),
       );
 
       // Calculate the parent struct hash
       const parentStructHash = ethers.keccak256(
         ethers.AbiCoder.defaultAbiCoder().encode(
-          ['bytes32', 'bytes32'],
-          [
-              ethers.keccak256(ethers.toUtf8Bytes(PARENT_TYPEHASH)),
-              data
-          ]
-       )
+          ["bytes32", "bytes32"],
+          [ethers.keccak256(ethers.toUtf8Bytes(PARENT_TYPEHASH)), data],
+        ),
       );
 
       // Calculate the final hash
       const resultHash = ethers.keccak256(
-      ethers.concat([
-          '0x1901',
-          domainSeparator,
-          parentStructHash
-      ])
-     );
+        ethers.concat(["0x1901", domainSeparator, parentStructHash]),
+      );
 
-      console.log("being signed", ethers.hashMessage(ethers.getBytes(resultHash)));
+      console.log(
+        "being signed",
+        ethers.hashMessage(ethers.getBytes(resultHash)),
+      );
 
-      const signature = await smartAccountOwner.signMessage(ethers.getBytes(resultHash));
+      const signature = await smartAccountOwner.signMessage(
+        ethers.getBytes(resultHash),
+      );
 
       const isValid = await smartAccount.isValidSignature(
         data,
-        solidityPacked(["address", "bytes"], [await validatorModule.getAddress(), signature])
+        solidityPacked(
+          ["address", "bytes"],
+          [await validatorModule.getAddress(), signature],
+        ),
       );
 
       expect(isValid).to.equal("0x1626ba7e");
     });
-
   });
 
   describe("Smart Account check Only Entrypoint actions", function () {

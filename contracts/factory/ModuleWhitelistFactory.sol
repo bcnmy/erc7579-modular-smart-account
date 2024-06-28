@@ -16,7 +16,8 @@ import { LibClone } from "solady/src/utils/LibClone.sol";
 import { BytesLib } from "../lib/BytesLib.sol";
 import { INexus } from "../interfaces/INexus.sol";
 import { BootstrapConfig } from "../utils/Bootstrap.sol";
-import { AbstractNexusFactory } from "./AbstractNexusFactory.sol";
+import { Stakeable } from "../common/Stakeable.sol";
+import { INexusFactory } from "../interfaces/factory/INexusFactory.sol";
 
 /// @title ModuleWhitelistFactory
 /// @notice Factory for creating Nexus accounts with whitelisted modules. Ensures compliance with ERC-7579 and ERC-4337 standards.
@@ -25,7 +26,11 @@ import { AbstractNexusFactory } from "./AbstractNexusFactory.sol";
 /// @author @filmakarov | Biconomy | filipp.makarov@biconomy.io
 /// @author @zeroknots | Rhinestone.wtf | zeroknots.eth
 /// Special thanks to the Solady team for foundational contributions: https://github.com/Vectorized/solady
-contract ModuleWhitelistFactory is AbstractNexusFactory {
+contract ModuleWhitelistFactory is Stakeable, INexusFactory {
+    /// @notice Address of the implementation contract used to create new Nexus instances.
+    /// @dev This address is immutable and set upon deployment, ensuring the implementation cannot be changed.
+    address public immutable ACCOUNT_IMPLEMENTATION;
+
     /// @notice Mapping to store the addresses of whitelisted modules.
     mapping(address => bool) public moduleWhitelist;
 
@@ -33,16 +38,14 @@ contract ModuleWhitelistFactory is AbstractNexusFactory {
     /// @param module The module address that is not whitelisted.
     error ModuleNotWhitelisted(address module);
 
-    /// @notice Error thrown when a zero address is provided.
-    error ZeroAddressNotAllowed();
-
-    /// @notice Constructor to set the smart account implementation address and owner.
+    /// @notice Constructor to set the smart account implementation address and the factory owner.
     /// @param implementation_ The address of the Nexus implementation to be used for all deployments.
     /// @param owner_ The address of the owner of the factory.
-    constructor(address implementation_, address owner_) AbstractNexusFactory(implementation_, owner_) {
+    constructor(address implementation_, address owner_) Stakeable(owner_) {
+        require(implementation_ != address(0), ImplementationAddressCanNotBeZero());
         require(owner_ != address(0), ZeroAddressNotAllowed());
+        ACCOUNT_IMPLEMENTATION = implementation_;
     }
-
     /// @notice Adds an address to the module whitelist.
     /// @param module The address to be whitelisted.
     function addModuleToWhitelist(address module) external onlyOwner {

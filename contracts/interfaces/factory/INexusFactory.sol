@@ -19,9 +19,12 @@ pragma solidity ^0.8.26;
 /// @author @filmakarov | Biconomy | filipp.makarov@biconomy.io
 /// @author @zeroknots | Rhinestone.wtf | zeroknots.eth
 /// Special thanks to the Solady team for foundational contributions: https://github.com/Vectorized/solady
-interface IAbstractNexusFactory {
+interface INexusFactory {
     /// @notice Emitted when a new Smart Account is created.
     event AccountCreated(address indexed account, bytes indexed initData, bytes32 indexed salt);
+
+    /// @notice Error thrown when the owner address is zero.
+    error ZeroAddressNotAllowed();
 
     /// @notice Error thrown when the implementation address is zero.
     error ImplementationAddressCanNotBeZero();
