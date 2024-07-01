@@ -17,17 +17,20 @@ import { BytesLib } from "../lib/BytesLib.sol";
 import { INexus } from "../interfaces/INexus.sol";
 import { BootstrapConfig } from "../utils/RegistryBootstrap.sol";
 import { AbstractNexusFactory } from "./AbstractNexusFactory.sol";
+import { IERC7484 } from "../interfaces/IERC7484.sol";
+import { MODULE_TYPE_VALIDATOR, MODULE_TYPE_EXECUTOR, MODULE_TYPE_FALLBACK, MODULE_TYPE_HOOK } from "../types/Constants.sol";
 
-/// @title ModuleWhitelistFactory
+/// @title RegistryFactory
 /// @notice Factory for creating Nexus accounts with whitelisted modules. Ensures compliance with ERC-7579 and ERC-4337 standards.
 /// @author @livingrockrises | Biconomy | chirag@biconomy.io
 /// @author @aboudjem | Biconomy | adam.boudjemaa@biconomy.io
 /// @author @filmakarov | Biconomy | filipp.makarov@biconomy.io
 /// @author @zeroknots | Rhinestone.wtf | zeroknots.eth
 /// Special thanks to the Solady team for foundational contributions: https://github.com/Vectorized/solady
-contract ModuleWhitelistFactory is AbstractNexusFactory {
-    /// @notice Mapping to store the addresses of whitelisted modules.
-    mapping(address => bool) public moduleWhitelist;
+contract RegistryFactory is AbstractNexusFactory {
+    IERC7484 public immutable REGISTRY;
+    address[] public attesters;
+    uint8 public threshold;
 
     /// @notice Error thrown when a non-whitelisted module is used.
     /// @param module The module address that is not whitelisted.
@@ -39,21 +42,35 @@ contract ModuleWhitelistFactory is AbstractNexusFactory {
     /// @notice Constructor to set the smart account implementation address and owner.
     /// @param implementation_ The address of the Nexus implementation to be used for all deployments.
     /// @param owner_ The address of the owner of the factory.
-    constructor(address implementation_, address owner_) AbstractNexusFactory(implementation_, owner_) {
+    constructor(
+        address implementation_,
+        address owner_,
+        IERC7484 registry_,
+        address[] memory attesters_,
+        uint8 threshold_
+    ) AbstractNexusFactory(implementation_, owner_) {
         require(owner_ != address(0), ZeroAddressNotAllowed());
+        REGISTRY = registry_;
+        attesters = attesters_;
+        threshold = threshold_;
     }
 
-    /// @notice Adds an address to the module whitelist.
-    /// @param module The address to be whitelisted.
-    function addModuleToWhitelist(address module) external onlyOwner {
-        require(module != address(0), ZeroAddressNotAllowed());
-        moduleWhitelist[module] = true;
+    function addAttester(address attester) external onlyOwner {
+        attesters.push(attester);
     }
 
-    /// @notice Removes an address from the module whitelist.
-    /// @param module The address to be removed from the whitelist.
-    function removeModuleFromWhitelist(address module) external onlyOwner {
-        moduleWhitelist[module] = false;
+    function removeAttester(address attester) external onlyOwner {
+        for (uint256 i = 0; i < attesters.length; i++) {
+            if (attesters[i] == attester) {
+                attesters[i] = attesters[attesters.length - 1];
+                attesters.pop();
+                break;
+            }
+        }
+    }
+
+    function setThreshold(uint8 newThreshold) external onlyOwner {
+        threshold = newThreshold;
     }
 
     /// @notice Creates a new Nexus account with the provided initialization data.
@@ -72,22 +89,24 @@ contract ModuleWhitelistFactory is AbstractNexusFactory {
             BootstrapConfig[] memory validators,
             BootstrapConfig[] memory executors,
             BootstrapConfig memory hook,
-            BootstrapConfig[] memory fallbacks
-        ) = abi.decode(innerData, (BootstrapConfig[], BootstrapConfig[], BootstrapConfig, BootstrapConfig[]));
+            BootstrapConfig[] memory fallbacks,
+            ,
+
+        ) = abi.decode(innerData, (BootstrapConfig[], BootstrapConfig[], BootstrapConfig, BootstrapConfig[], address[], uint8));
 
         // Ensure all modules are whitelisted
         for (uint256 i = 0; i < validators.length; i++) {
-            require(isModuleWhitelisted(validators[i].module), ModuleNotWhitelisted(validators[i].module));
+            require(isModuleAllowed(validators[i].module, MODULE_TYPE_VALIDATOR), ModuleNotWhitelisted(validators[i].module));
         }
 
         for (uint256 i = 0; i < executors.length; i++) {
-            require(isModuleWhitelisted(executors[i].module), ModuleNotWhitelisted(executors[i].module));
+            require(isModuleAllowed(executors[i].module, MODULE_TYPE_EXECUTOR), ModuleNotWhitelisted(executors[i].module));
         }
 
-        require(isModuleWhitelisted(hook.module), ModuleNotWhitelisted(hook.module));
+        require(isModuleAllowed(hook.module, MODULE_TYPE_HOOK), ModuleNotWhitelisted(hook.module));
 
         for (uint256 i = 0; i < fallbacks.length; i++) {
-            require(isModuleWhitelisted(fallbacks[i].module), ModuleNotWhitelisted(fallbacks[i].module));
+            require(isModuleAllowed(fallbacks[i].module, MODULE_TYPE_FALLBACK), ModuleNotWhitelisted(fallbacks[i].module));
         }
 
         // Compute the actual salt for deterministic deployment
@@ -129,7 +148,8 @@ contract ModuleWhitelistFactory is AbstractNexusFactory {
     /// @notice Checks if a module is whitelisted.
     /// @param module The address of the module to check.
     /// @return True if the module is whitelisted, false otherwise.
-    function isModuleWhitelisted(address module) public view returns (bool) {
-        return moduleWhitelist[module];
+    function isModuleAllowed(address module, uint256 moduleType) public view returns (bool) {
+        REGISTRY.check(module, moduleType, attesters, threshold);
+        return true;
     }
 }

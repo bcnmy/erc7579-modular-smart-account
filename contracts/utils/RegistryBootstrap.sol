@@ -14,6 +14,7 @@ pragma solidity ^0.8.26;
 
 import { ModuleManager } from "../base/ModuleManager.sol";
 import { IModule } from "../interfaces/modules/IModule.sol";
+import { IERC7484 } from "../interfaces/IERC7484.sol";
 
 /// @title Bootstrap Configuration for Nexus
 /// @notice Provides configuration and initialization for Nexus smart accounts.
@@ -34,8 +35,15 @@ contract Bootstrap is ModuleManager {
     /// @dev Intended to be called by the Nexus with a delegatecall.
     /// @param validator The address of the validator module.
     /// @param data The initialization data for the validator module.
-    function initNexusWithSingleValidator(IModule validator, bytes calldata data) external {
+    function initNexusWithSingleValidator(
+        IModule validator,
+        bytes calldata data,
+        IERC7484 registry,
+        address[] calldata attesters,
+        uint8 threshold
+    ) external {
         _installValidator(address(validator), data);
+        _configureRegistry(registry, attesters, threshold);
     }
 
     /// @notice Initializes the Nexus account with multiple modules.
@@ -48,7 +56,10 @@ contract Bootstrap is ModuleManager {
         BootstrapConfig[] calldata validators,
         BootstrapConfig[] calldata executors,
         BootstrapConfig calldata hook,
-        BootstrapConfig[] calldata fallbacks
+        BootstrapConfig[] calldata fallbacks,
+        IERC7484 registry,
+        address[] calldata attesters,
+        uint8 threshold
     ) external {
         // Initialize validators
         for (uint256 i = 0; i < validators.length; i++) {
@@ -71,13 +82,21 @@ contract Bootstrap is ModuleManager {
             if (fallbacks[i].module == address(0)) continue;
             _installFallbackHandler(fallbacks[i].module, fallbacks[i].data);
         }
+
+        _configureRegistry(registry, attesters, threshold);
     }
 
     /// @notice Initializes the Nexus account with a scoped set of modules.
     /// @dev Intended to be called by the Nexus with a delegatecall.
     /// @param validators The configuration array for validator modules.
     /// @param hook The configuration for the hook module.
-    function initNexusScoped(BootstrapConfig[] calldata validators, BootstrapConfig calldata hook) external {
+    function initNexusScoped(
+        BootstrapConfig[] calldata validators,
+        BootstrapConfig calldata hook,
+        IERC7484 registry,
+        address[] calldata attesters,
+        uint8 threshold
+    ) external {
         // Initialize validators
         for (uint256 i = 0; i < validators.length; i++) {
             _installValidator(validators[i].module, validators[i].data);
@@ -87,6 +106,8 @@ contract Bootstrap is ModuleManager {
         if (hook.module != address(0)) {
             _installHook(hook.module, hook.data);
         }
+
+        _configureRegistry(registry, attesters, threshold);
     }
 
     /// @notice Prepares calldata for the initNexus function.
@@ -99,9 +120,12 @@ contract Bootstrap is ModuleManager {
         BootstrapConfig[] calldata validators,
         BootstrapConfig[] calldata executors,
         BootstrapConfig calldata hook,
-        BootstrapConfig[] calldata fallbacks
+        BootstrapConfig[] calldata fallbacks,
+        IERC7484 registry,
+        address[] calldata attesters,
+        uint8 threshold
     ) external view returns (bytes memory init) {
-        init = abi.encode(address(this), abi.encodeCall(this.initNexus, (validators, executors, hook, fallbacks)));
+        init = abi.encode(address(this), abi.encodeCall(this.initNexus, (validators, executors, hook, fallbacks, registry, attesters, threshold)));
     }
 
     /// @notice Prepares calldata for the initNexusScoped function.
@@ -110,15 +134,26 @@ contract Bootstrap is ModuleManager {
     /// @return init The prepared calldata for initNexusScoped.
     function getInitNexusScopedCalldata(
         BootstrapConfig[] calldata validators,
-        BootstrapConfig calldata hook
+        BootstrapConfig calldata hook,
+        IERC7484 registry,
+        address[] calldata attesters,
+        uint8 threshold
     ) external view returns (bytes memory init) {
-        init = abi.encode(address(this), abi.encodeCall(this.initNexusScoped, (validators, hook)));
+        init = abi.encode(address(this), abi.encodeCall(this.initNexusScoped, (validators, hook, registry, attesters, threshold)));
     }
 
     /// @notice Prepares calldata for the initNexusWithSingleValidator function.
     /// @param validator The configuration for the validator module.
     /// @return init The prepared calldata for initNexusWithSingleValidator.
-    function getInitNexusWithSingleValidatorCalldata(BootstrapConfig calldata validator) external view returns (bytes memory init) {
-        init = abi.encode(address(this), abi.encodeCall(this.initNexusWithSingleValidator, (IModule(validator.module), validator.data)));
+    function getInitNexusWithSingleValidatorCalldata(
+        BootstrapConfig calldata validator,
+        IERC7484 registry,
+        address[] calldata attesters,
+        uint8 threshold
+    ) external view returns (bytes memory init) {
+        init = abi.encode(
+            address(this),
+            abi.encodeCall(this.initNexusWithSingleValidator, (IModule(validator.module), validator.data, registry, attesters, threshold))
+        );
     }
 }

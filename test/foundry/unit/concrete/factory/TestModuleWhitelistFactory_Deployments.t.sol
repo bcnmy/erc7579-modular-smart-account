@@ -78,7 +78,7 @@ contract TestModuleWhitelistFactory_Deployments is NexusTest_Base {
         bytes32 salt = keccak256(saDeploymentIndex);
 
         // Create initcode and salt to be sent to Factory
-        bytes memory _initData = BOOTSTRAPPER.getInitNexusCalldata(validators, executors, hook, fallbacks);
+        bytes memory _initData = BOOTSTRAPPER.getInitNexusCalldata(validators, executors, hook, fallbacks, REGISTRY, ATTESTERS, THRESHOLD);
 
         address payable expectedAddress = whitelistFactory.computeAccountAddress(_initData, salt);
 
@@ -93,9 +93,7 @@ contract TestModuleWhitelistFactory_Deployments is NexusTest_Base {
             "Validator should be installed"
         );
         assertEq(
-            Nexus(deployedAccountAddress).isModuleInstalled(MODULE_TYPE_EXECUTOR, address(EXECUTOR_MODULE), ""),
-            true,
-            "Executor should be installed"
+            Nexus(deployedAccountAddress).isModuleInstalled(MODULE_TYPE_EXECUTOR, address(EXECUTOR_MODULE), ""), true, "Executor should be installed"
         );
         assertEq(Nexus(deployedAccountAddress).isModuleInstalled(MODULE_TYPE_HOOK, address(HOOK_MODULE), ""), true, "Hook should be installed");
         assertEq(
@@ -118,7 +116,7 @@ contract TestModuleWhitelistFactory_Deployments is NexusTest_Base {
         bytes32 salt = keccak256(saDeploymentIndex);
 
         // Create initcode and salt to be sent to Factory
-        bytes memory _initData = BOOTSTRAPPER.getInitNexusCalldata(validators, executors, hook, fallbacks);
+        bytes memory _initData = BOOTSTRAPPER.getInitNexusCalldata(validators, executors, hook, fallbacks, REGISTRY, ATTESTERS, THRESHOLD);
 
         // Expect the account creation to revert
         vm.expectRevert(abi.encodeWithSelector(ModuleNotWhitelisted.selector, nonWhitelistedModule));
@@ -136,7 +134,7 @@ contract TestModuleWhitelistFactory_Deployments is NexusTest_Base {
         bytes32 salt0 = keccak256(saDeploymentIndex0);
         bytes32 salt1 = keccak256(saDeploymentIndex1);
 
-        bytes memory _initData = BOOTSTRAPPER.getInitNexusCalldata(validators, executors, hook, fallbacks);
+        bytes memory _initData = BOOTSTRAPPER.getInitNexusCalldata(validators, executors, hook, fallbacks, REGISTRY, ATTESTERS, THRESHOLD);
 
         address payable accountAddress0 = whitelistFactory.createAccount{ value: 1 ether }(_initData, salt0);
         address payable accountAddress1 = whitelistFactory.createAccount{ value: 1 ether }(_initData, salt1);
@@ -158,7 +156,7 @@ contract TestModuleWhitelistFactory_Deployments is NexusTest_Base {
         bytes32 salt = keccak256(saDeploymentIndex);
 
         // Create initcode and salt to be sent to Factory
-        bytes memory _initData = BOOTSTRAPPER.getInitNexusCalldata(validators, executors, hook, fallbacks);
+        bytes memory _initData = BOOTSTRAPPER.getInitNexusCalldata(validators, executors, hook, fallbacks, REGISTRY, ATTESTERS, THRESHOLD);
 
         // Expect the account creation to revert
         vm.expectRevert(abi.encodeWithSelector(ModuleNotWhitelisted.selector, nonWhitelistedExecutor));
@@ -178,7 +176,7 @@ contract TestModuleWhitelistFactory_Deployments is NexusTest_Base {
         bytes32 salt = keccak256(saDeploymentIndex);
 
         // Create initcode and salt to be sent to Factory
-        bytes memory _initData = BOOTSTRAPPER.getInitNexusCalldata(validators, executors, hook, fallbacks);
+        bytes memory _initData = BOOTSTRAPPER.getInitNexusCalldata(validators, executors, hook, fallbacks, REGISTRY, ATTESTERS, THRESHOLD);
 
         // Expect the account creation to revert
         vm.expectRevert(abi.encodeWithSelector(ModuleNotWhitelisted.selector, nonWhitelistedHook));
@@ -198,7 +196,7 @@ contract TestModuleWhitelistFactory_Deployments is NexusTest_Base {
         bytes32 salt = keccak256(saDeploymentIndex);
 
         // Create initcode and salt to be sent to Factory
-        bytes memory _initData = BOOTSTRAPPER.getInitNexusCalldata(validators, executors, hook, fallbacks);
+        bytes memory _initData = BOOTSTRAPPER.getInitNexusCalldata(validators, executors, hook, fallbacks, REGISTRY, ATTESTERS, THRESHOLD);
 
         // Expect the account creation to revert
         vm.expectRevert(abi.encodeWithSelector(ModuleNotWhitelisted.selector, nonWhitelistedFallback));

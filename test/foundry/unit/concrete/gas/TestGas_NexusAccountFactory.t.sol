@@ -24,10 +24,8 @@ contract TestGas_NexusAccountFactory is TestModuleManagement_Base {
     /// @notice Tests gas usage for deploying a new account with different parameters
     function test_Gas_DeployAccountWithDifferentParams() public {
         uint256 initialGas = gasleft();
-        address payable newAccount = FACTORY.createAccount(
-            getInitData(address(VALIDATOR_MODULE), address(mockExecutor)),
-            keccak256("deploy_account_with_diff_params_test")
-        );
+        address payable newAccount =
+            FACTORY.createAccount(getInitData(address(VALIDATOR_MODULE), address(mockExecutor)), keccak256("deploy_account_with_diff_params_test"));
         uint256 gasUsed = initialGas - gasleft();
         console.log("Gas used for deploying a new account with different parameters: ", gasUsed);
 
@@ -38,11 +36,10 @@ contract TestGas_NexusAccountFactory is TestModuleManagement_Base {
 
     /// @notice Tests gas usage for deploying multiple accounts
     function test_Gas_DeployMultipleAccounts() public {
-        for (uint i = 0; i < 5; i++) {
+        for (uint256 i = 0; i < 5; i++) {
             uint256 initialGas = gasleft();
             address payable newAccount = FACTORY.createAccount(
-                getInitData(address(VALIDATOR_MODULE), address(this)),
-                keccak256(abi.encodePacked("deploy_multiple_accounts", i))
+                getInitData(address(VALIDATOR_MODULE), address(this)), keccak256(abi.encodePacked("deploy_multiple_accounts", i))
             );
             uint256 gasUsed = initialGas - gasleft();
             console.log("Gas used per deployment while deploying multiple accounts: ", gasUsed);
@@ -54,10 +51,8 @@ contract TestGas_NexusAccountFactory is TestModuleManagement_Base {
     /// @notice Tests gas usage for deploying an account and verifying module installation
     function test_Gas_DeployAccountAndVerifyModuleInstallation() public {
         uint256 initialGas = gasleft();
-        address payable newAccount = FACTORY.createAccount(
-            getInitData(address(VALIDATOR_MODULE), address(this)),
-            keccak256("deploy_account_verify_module")
-        );
+        address payable newAccount =
+            FACTORY.createAccount(getInitData(address(VALIDATOR_MODULE), address(this)), keccak256("deploy_account_verify_module"));
         uint256 gasUsed = initialGas - gasleft();
         console.log("Gas used for deploying a new account and verifying module installation: ", gasUsed);
 
@@ -70,7 +65,7 @@ contract TestGas_NexusAccountFactory is TestModuleManagement_Base {
     function getInitData(address validator, address owner) internal view returns (bytes memory) {
         BootstrapConfig[] memory validators = BootstrapLib.createArrayConfig(validator, abi.encodePacked(owner));
         BootstrapConfig memory hook = BootstrapLib.createSingleConfig(address(0), "");
-        return BOOTSTRAPPER.getInitNexusScopedCalldata(validators, hook);
+        return BOOTSTRAPPER.getInitNexusScopedCalldata(validators, hook, REGISTRY, ATTESTERS, THRESHOLD);
     }
 
     /// @notice Validates the creation of a new account.
@@ -79,8 +74,7 @@ contract TestGas_NexusAccountFactory is TestModuleManagement_Base {
         string memory expected = "biconomy.nexus.1.0.0-beta";
         assertEq(_account.accountId(), expected, "AccountConfig should return the expected account ID.");
         assertTrue(
-            _account.isModuleInstalled(MODULE_TYPE_VALIDATOR, address(VALIDATOR_MODULE), ""),
-            "Account should have the validation module installed"
+            _account.isModuleInstalled(MODULE_TYPE_VALIDATOR, address(VALIDATOR_MODULE), ""), "Account should have the validation module installed"
         );
     }
 }

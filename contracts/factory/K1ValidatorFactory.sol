@@ -15,8 +15,9 @@ pragma solidity ^0.8.26;
 import { LibClone } from "solady/src/utils/LibClone.sol";
 import { INexus } from "../interfaces/INexus.sol";
 import { BootstrapLib } from "../lib/BootstrapLib.sol";
-import { Bootstrap, BootstrapConfig } from "../utils/Bootstrap.sol";
+import { Bootstrap, BootstrapConfig } from "../utils/RegistryBootstrap.sol";
 import { Stakeable } from "../common/Stakeable.sol";
+import { IERC7484 } from "../interfaces/IERC7484.sol";
 
 /// @title K1ValidatorFactory for Nexus Account
 /// @notice Manages the creation of Modular Smart Accounts compliant with ERC-7579 and ERC-4337 using a K1 validator.
@@ -38,6 +39,8 @@ contract K1ValidatorFactory is Stakeable {
     /// @dev This address is set once upon deployment and cannot be changed afterwards.
     Bootstrap public immutable BOOTSTRAPPER;
 
+    IERC7484 public immutable REGISTRY;
+
     /// @notice Emitted when a new Smart Account is created, capturing the account details and associated module configurations.
     event AccountCreated(address indexed account, address indexed owner, uint256 indexed index);
 
@@ -49,18 +52,30 @@ contract K1ValidatorFactory is Stakeable {
     /// @param factoryOwner The address of the factory owner.
     /// @param k1Validator The address of the K1 Validator module to be used for all deployments.
     /// @param bootstrapper The address of the Bootstrapper module to be used for all deployments.
-    constructor(address implementation, address factoryOwner, address k1Validator, Bootstrap bootstrapper) Stakeable(factoryOwner) {
+    constructor(
+        address implementation,
+        address factoryOwner,
+        address k1Validator,
+        Bootstrap bootstrapper,
+        IERC7484 registry
+    ) Stakeable(factoryOwner) {
         require(!(implementation == address(0) || k1Validator == address(0) || address(bootstrapper) == address(0)), ZeroAddressNotAllowed());
         ACCOUNT_IMPLEMENTATION = implementation;
         K1_VALIDATOR = k1Validator;
         BOOTSTRAPPER = bootstrapper;
+        REGISTRY = registry;
     }
 
     /// @notice Creates a new Nexus with a specific validator and initialization data.
     /// @param eoaOwner The address of the EOA owner of the Nexus.
     /// @param index The index of the Nexus.
     /// @return The address of the newly created Nexus.
-    function createAccount(address eoaOwner, uint256 index) external payable returns (address payable) {
+    function createAccount(
+        address eoaOwner,
+        uint256 index,
+        address[] calldata attesters,
+        uint8 threshold
+    ) external payable returns (address payable) {
         // Compute the actual salt for deterministic deployment
         bytes32 actualSalt;
         assembly {
@@ -76,7 +91,7 @@ contract K1ValidatorFactory is Stakeable {
 
         // Create the validator configuration using the Bootstrap library
         BootstrapConfig memory validator = BootstrapLib.createSingleConfig(K1_VALIDATOR, abi.encodePacked(eoaOwner));
-        bytes memory initData = BOOTSTRAPPER.getInitNexusWithSingleValidatorCalldata(validator);
+        bytes memory initData = BOOTSTRAPPER.getInitNexusWithSingleValidatorCalldata(validator, REGISTRY, attesters, threshold);
 
         // Initialize the account if it was not already deployed
         if (!alreadyDeployed) {
@@ -90,7 +105,7 @@ contract K1ValidatorFactory is Stakeable {
     /// @param - The address of the EOA owner of the Nexus.
     /// @param - The index of the Nexus.
     /// @return expectedAddress The expected address at which the Nexus contract will be deployed if the provided parameters are used.
-    function computeAccountAddress(address, uint256) external view returns (address payable expectedAddress) {
+    function computeAccountAddress(address, uint256, address[] calldata, uint8) external view returns (address payable expectedAddress) {
         // Compute the actual salt for deterministic deployment
         bytes32 actualSalt;
         assembly {

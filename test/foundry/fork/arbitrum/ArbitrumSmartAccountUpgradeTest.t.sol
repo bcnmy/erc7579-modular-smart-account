@@ -21,9 +21,9 @@ contract ArbitrumSmartAccountUpgradeTest is NexusTest_Base, ArbitrumSettings {
     /// @notice Sets up the initial test environment and forks the Arbitrum mainnet.
     function setUp() public {
         address _ENTRYPOINT = 0x0000000071727De22E5E9d8BAf0edAc6f37da032;
-        uint mainnetFork = vm.createFork(getArbitrumRpcUrl());
+        uint256 mainnetFork = vm.createFork(getArbitrumRpcUrl());
         vm.selectFork(mainnetFork);
-        vm.rollFork(209480000);
+        vm.rollFork(209_480_000);
         init();
         smartAccountV2 = IBiconomySmartAccountV2(SMART_ACCOUNT_V2_ADDRESS);
         ENTRYPOINT_V_0_6 = IEntryPointV_0_6(ENTRYPOINT_ADDRESS);
@@ -69,13 +69,8 @@ contract ArbitrumSmartAccountUpgradeTest is NexusTest_Base, ArbitrumSettings {
         bytes memory callData = abi.encodeWithSelector(usdc.transfer.selector, recipient, amount);
         Execution[] memory execution = new Execution[](1);
         execution[0] = Execution(address(usdc), 0, callData);
-        PackedUserOperation[] memory userOps = buildPackedUserOperation(
-            BOB,
-            Nexus(payable(address(SMART_ACCOUNT_V2_ADDRESS))),
-            EXECTYPE_DEFAULT,
-            execution,
-            address(VALIDATOR_MODULE)
-        );
+        PackedUserOperation[] memory userOps =
+            buildPackedUserOperation(BOB, Nexus(payable(address(SMART_ACCOUNT_V2_ADDRESS))), EXECTYPE_DEFAULT, execution, address(VALIDATOR_MODULE));
         ENTRYPOINT_V_0_7.handleOps(userOps, payable(OWNER_ADDRESS));
         assertEq(usdc.balanceOf(recipient), amount, "USDC transfer failed");
     }
@@ -88,13 +83,8 @@ contract ArbitrumSmartAccountUpgradeTest is NexusTest_Base, ArbitrumSettings {
         vm.deal(address(smartAccountV2), amount + 1 ether);
         Execution[] memory execution = new Execution[](1);
         execution[0] = Execution(recipient, amount, "");
-        PackedUserOperation[] memory userOps = buildPackedUserOperation(
-            BOB,
-            Nexus(payable(address(smartAccountV2))),
-            EXECTYPE_DEFAULT,
-            execution,
-            address(VALIDATOR_MODULE)
-        );
+        PackedUserOperation[] memory userOps =
+            buildPackedUserOperation(BOB, Nexus(payable(address(smartAccountV2))), EXECTYPE_DEFAULT, execution, address(VALIDATOR_MODULE));
         ENTRYPOINT_V_0_7.handleOps(userOps, payable(OWNER_ADDRESS));
         assertEq(address(recipient).balance, amount, "ETH transfer failed");
     }
@@ -126,7 +116,7 @@ contract ArbitrumSmartAccountUpgradeTest is NexusTest_Base, ArbitrumSettings {
         BootstrapConfig memory hook = BootstrapLib.createSingleConfig(address(0), "");
 
         // Create initcode and salt to be sent to Factory
-        bytes memory _initData = BOOTSTRAPPER.getInitNexusScopedCalldata(validators, hook);
+        bytes memory _initData = BOOTSTRAPPER.getInitNexusScopedCalldata(validators, hook, REGISTRY, ATTESTERS, THRESHOLD);
 
         dest[1] = address(smartAccountV2);
         values[1] = 0;

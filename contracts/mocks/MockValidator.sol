@@ -25,7 +25,7 @@ contract MockValidator is IValidator {
         // MAYBE SHOULD PREPARE REPLAY RESISTANT HASH BY APPENDING MSG.SENDER
         // SEE: https://github.com/bcnmy/scw-contracts/blob/3362262dab34fa0f57e2fbe0e57a4bdbd5318165/contracts/smart-account/modules/EcdsaOwnershipRegistryModule.sol#L122-L132
         // OR USE EIP-712
-         if (SignatureCheckerLib.isValidSignatureNowCalldata(owner, hash, signature)) {
+        if (SignatureCheckerLib.isValidSignatureNowCalldata(owner, hash, signature)) {
             return ERC1271_MAGICVALUE;
         }
         if (SignatureCheckerLib.isValidSignatureNowCalldata(owner, MessageHashUtils.toEthSignedMessageHash(hash), signature)) {

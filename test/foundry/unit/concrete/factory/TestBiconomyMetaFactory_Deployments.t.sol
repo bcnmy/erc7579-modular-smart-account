@@ -2,7 +2,7 @@
 pragma solidity ^0.8.26;
 
 import "../../../utils/NexusTest_Base.t.sol";
-import "../../../../../contracts/utils/Bootstrap.sol";
+import "../../../../../contracts/utils/RegistryBootstrap.sol";
 import "../../../../../contracts/factory/BiconomyMetaFactory.sol";
 import "../../../../../contracts/factory/K1ValidatorFactory.sol";
 
@@ -20,7 +20,7 @@ contract TestBiconomyMetaFactory_Deployments is NexusTest_Base {
         vm.deal(user.addr, 1 ether);
         metaFactory = new BiconomyMetaFactory(address(FACTORY_OWNER.addr));
         mockFactory = address(
-            new K1ValidatorFactory(address(FACTORY_OWNER.addr), address(ACCOUNT_IMPLEMENTATION), address(VALIDATOR_MODULE), new Bootstrap())
+            new K1ValidatorFactory(address(FACTORY_OWNER.addr), address(ACCOUNT_IMPLEMENTATION), address(VALIDATOR_MODULE), new Bootstrap(), REGISTRY)
         );
     }
 
@@ -48,7 +48,7 @@ contract TestBiconomyMetaFactory_Deployments is NexusTest_Base {
 
     /// @notice Tests that deploying an account fails if the factory is not whitelisted.
     function test_DeployAccount_FailsIfFactoryNotWhitelisted() public payable {
-        bytes memory factoryData = abi.encodeWithSelector(K1ValidatorFactory.createAccount.selector, user.addr, 1);
+        bytes memory factoryData = abi.encodeWithSelector(K1ValidatorFactory.createAccount.selector, user.addr, 1, ATTESTERS, THRESHOLD);
 
         // Expect the deployment to revert
         vm.expectRevert(FactoryNotWhitelisted.selector);
@@ -61,7 +61,7 @@ contract TestBiconomyMetaFactory_Deployments is NexusTest_Base {
         metaFactory.addFactoryToWhitelist(mockFactory);
         vm.stopPrank();
 
-        bytes memory factoryData = abi.encodeWithSelector(K1ValidatorFactory.createAccount.selector, user.addr, 1);
+        bytes memory factoryData = abi.encodeWithSelector(K1ValidatorFactory.createAccount.selector, user.addr, 1, ATTESTERS, THRESHOLD);
 
         address payable createdAccount = metaFactory.deployWithFactory{ value: 1 ether }(mockFactory, factoryData);
 

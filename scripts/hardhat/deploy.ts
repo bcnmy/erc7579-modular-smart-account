@@ -45,7 +45,7 @@ async function main() {
       libraries: {
         BootstrapLib: await bootstrapLib.getAddress(),
       },
-      }
+    },
   );
 
   const k1ValidatorFactory = await K1ValidatorFactory.deploy(
@@ -59,14 +59,17 @@ async function main() {
 
   console.log(`k1ValidatorFactory deployed at: ${k1ValidatorFactory.target}`);
 
-  const BiconomyMetaFactory = await ethers.getContractFactory("BiconomyMetaFactory");
+  const BiconomyMetaFactory = await ethers.getContractFactory(
+    "BiconomyMetaFactory",
+  );
 
-  const biconomyMetaFactory = await BiconomyMetaFactory.deploy(await factoryOwner.getAddress());
+  const biconomyMetaFactory = await BiconomyMetaFactory.deploy(
+    await factoryOwner.getAddress(),
+  );
 
   await biconomyMetaFactory.waitForDeployment();
 
   console.log(`BiconomyMetaFactory deployed at: ${biconomyMetaFactory.target}`);
-
 }
 
 // We recommend this pattern to be able to use async/await everywhere

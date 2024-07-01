@@ -25,7 +25,7 @@ contract TestFuzz_AccountFactory_Deployment is NexusTest_Base {
 
         BootstrapConfig[] memory validators = BootstrapLib.createMultipleConfigs(modules, datas);
         BootstrapConfig memory hook = BootstrapLib.createSingleConfig(address(0), "");
-        bytes memory _initData = BOOTSTRAPPER.getInitNexusScopedCalldata(validators, hook);
+        bytes memory _initData = BOOTSTRAPPER.getInitNexusScopedCalldata(validators, hook, REGISTRY, ATTESTERS, THRESHOLD);
 
         bytes32 salt = keccak256(abi.encodePacked(randomSeed));
         address payable expectedAddress = FACTORY.computeAccountAddress(_initData, salt);
@@ -49,7 +49,7 @@ contract TestFuzz_AccountFactory_Deployment is NexusTest_Base {
 
         BootstrapConfig[] memory validators = BootstrapLib.createMultipleConfigs(modules, datas);
         BootstrapConfig memory hook = BootstrapLib.createSingleConfig(address(0), "");
-        bytes memory _initData = BOOTSTRAPPER.getInitNexusScopedCalldata(validators, hook);
+        bytes memory _initData = BOOTSTRAPPER.getInitNexusScopedCalldata(validators, hook, REGISTRY, ATTESTERS, THRESHOLD);
 
         bytes32 salt = keccak256(abi.encodePacked(largeIndex));
         address payable expectedAddress = FACTORY.computeAccountAddress(_initData, salt);
@@ -73,7 +73,7 @@ contract TestFuzz_AccountFactory_Deployment is NexusTest_Base {
 
         BootstrapConfig[] memory validators = BootstrapLib.createMultipleConfigs(modules, datas);
         BootstrapConfig memory hook = BootstrapLib.createSingleConfig(address(0), "");
-        bytes memory _initData = BOOTSTRAPPER.getInitNexusScopedCalldata(validators, hook);
+        bytes memory _initData = BOOTSTRAPPER.getInitNexusScopedCalldata(validators, hook, REGISTRY, ATTESTERS, THRESHOLD);
 
         bytes32 salt = keccak256(abi.encodePacked(randomSeed));
         address payable expectedAddress = FACTORY.computeAccountAddress(_initData, salt);
